@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="app-layout" data-user-id="{{ user.id }}">
+    <aside class="sidebar">
+        <header>
+            <h2>{{ user.display_name }}</h2>
+            <p class="muted">@{{ user.username }}</p>
+            <button id="logout-button" type="button">Выйти</button>
+        </header>
+
+        <section class="stack">
+            <h3>Создать direct чат</h3>
+            <form id="create-direct-form" class="inline-form">
+                <input type="number" name="peer_id" min="1" placeholder="ID собеседника" required>
+                <button type="submit">Создать</button>
+            </form>
+        </section>
+
+        <section class="stack">
+            <h3>Создать группу</h3>
+            <form id="create-group-form" class="stack">
+                <input type="text" name="title" placeholder="Название группы" required>
+                <input type="text" name="member_ids" placeholder="ID через запятую">
+                <button type="submit">Создать группу</button>
+            </form>
+        </section>
+
+        <section id="chat-list"
+                 hx-get="/partials/chats"
+                 hx-trigger="load, refresh-chats from:body"
+                 hx-target="#chat-list"
+                 hx-swap="innerHTML">
+            {% include "partials/chat_list.html" %}
+        </section>
+    </aside>
+
+    <section class="chat-panel">
+        <header class="chat-panel-header">
+            <h2 id="chat-title">Выберите чат</h2>
+            <div class="inline-actions">
+                <button id="start-call-button" type="button" disabled>Позвонить</button>
+                <button id="mute-button" type="button" disabled>Mute</button>
+                <button id="hangup-button" type="button" disabled>Завершить</button>
+            </div>
+        </header>
+
+        <section id="messages" class="messages"></section>
+
+        <form id="send-message-form" class="send-form">
+            <input id="message-text" name="text" placeholder="Введите сообщение" maxlength="2000" required>
+            <button type="submit" disabled id="send-message-button">Отправить</button>
+        </form>
+
+        <p id="app-error" class="error"></p>
+    </section>
+</main>
+{% endblock %}

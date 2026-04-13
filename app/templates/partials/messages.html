@@ -1,0 +1,17 @@
+<div class="stack">
+    {% if messages %}
+        {% for message in messages %}
+            <article class="message">
+                <div class="meta">
+                    <strong>#{{ message.sender_id }}</strong>
+                    <span>{{ message.status }}</span>
+                    <small>{{ message.created_at }}</small>
+                </div>
+                <p>{{ message.text }}</p>
+                <button type="button" onclick="window.Messgo.markRead({{ message.id }})">Прочитано</button>
+            </article>
+        {% endfor %}
+    {% else %}
+        <p class="muted">Сообщений пока нет</p>
+    {% endif %}
+</div>

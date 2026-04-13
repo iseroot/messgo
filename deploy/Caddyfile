@@ -1,0 +1,19 @@
+{$DOMAIN:82.40.37.185} {
+    protocols h1 h2
+    encode zstd gzip
+
+    header {
+        X-Frame-Options "DENY"
+        X-Content-Type-Options "nosniff"
+        Referrer-Policy "same-origin"
+    }
+
+    @static path /static/*
+    handle @static {
+        root * /opt/messgo/app
+        header Cache-Control "public, max-age=604800, immutable"
+        file_server
+    }
+
+    reverse_proxy 127.0.0.1:8000
+}

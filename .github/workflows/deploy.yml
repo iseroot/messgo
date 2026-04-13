@@ -1,0 +1,75 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: ["CI"]
+    types: ["completed"]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        env:
+          TARGET_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          DEPLOY_APP_DIR: ${{ secrets.DEPLOY_APP_DIR }}
+          DEPLOY_REPO_URL: ${{ secrets.DEPLOY_REPO_URL }}
+          DEPLOY_ENV_B64: ${{ secrets.DEPLOY_ENV_B64 }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          port: ${{ secrets.DEPLOY_PORT }}
+          username: ${{ secrets.DEPLOY_USER }}
+          password: ${{ secrets.DEPLOY_PASSWORD }}
+          script_stop: true
+          envs: TARGET_SHA,DEPLOY_APP_DIR,DEPLOY_REPO_URL,DEPLOY_ENV_B64
+          script: |
+            set -euo pipefail
+
+            APP_DIR="${DEPLOY_APP_DIR:-/opt/messgo}"
+            REPO_URL="${DEPLOY_REPO_URL:-https://github.com/iseroot/messgo.git}"
+
+            if command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+              SUDO="sudo"
+            else
+              SUDO=""
+            fi
+
+            if [ ! -d "$APP_DIR/.git" ]; then
+              $SUDO mkdir -p "$APP_DIR"
+              $SUDO chown -R "$USER":"$USER" "$APP_DIR"
+              git clone "$REPO_URL" "$APP_DIR"
+            fi
+
+            cd "$APP_DIR"
+            git fetch --all --tags
+            git checkout "$TARGET_SHA"
+
+            if [ -n "${DEPLOY_ENV_B64:-}" ]; then
+              echo "$DEPLOY_ENV_B64" | base64 -d > "$APP_DIR/.env"
+              chmod 600 "$APP_DIR/.env" || true
+            fi
+
+            python3 -m venv .venv
+            . .venv/bin/activate
+            python -m pip install --upgrade pip
+            python -m pip install -e .
+
+            if [ -f deploy/systemd/messgo.service ]; then
+              $SUDO cp deploy/systemd/messgo.service /etc/systemd/system/messgo.service
+            fi
+            if [ -f deploy/Caddyfile ]; then
+              $SUDO cp deploy/Caddyfile /etc/caddy/Caddyfile
+            fi
+
+            $SUDO systemctl daemon-reload
+            $SUDO systemctl enable --now messgo.service
+            $SUDO systemctl restart messgo.service
+
+            if $SUDO systemctl list-unit-files | grep -q '^caddy'; then
+              $SUDO systemctl restart caddy.service
+            fi
+
+            curl -fsS http://127.0.0.1:8000/health >/dev/null

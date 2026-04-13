@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="theme-color" content="#111827">
+    <title>{{ app_name if app_name else "messgo" }}</title>
+    <link rel="stylesheet" href="/static/css/app.css">
+    <link rel="manifest" href="/static/manifest.webmanifest">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+    {% block content %}{% endblock %}
+    <script src="/static/js/app.js" defer></script>
+    <script src="/static/js/call.js" defer></script>
+</body>
+</html>

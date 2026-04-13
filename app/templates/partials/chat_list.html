@@ -1,0 +1,19 @@
+<div class="stack">
+    {% if chats %}
+        {% for chat in chats %}
+            <button class="chat-item"
+                    data-chat-id="{{ chat.id }}"
+                    data-chat-title="{{ chat.title if chat.title else ('Direct #' ~ chat.id) }}"
+                    hx-get="/partials/chats/{{ chat.id }}/messages"
+                    hx-target="#messages"
+                    hx-swap="innerHTML"
+                    hx-trigger="click"
+                    onclick='window.Messgo.selectChat({{ chat.id }}, {{ (chat.title if chat.title else ("Direct #" ~ chat.id))|tojson }})'>
+                <span>{{ chat.title if chat.title else ('Direct #' ~ chat.id) }}</span>
+                <small>{{ chat.type }}</small>
+            </button>
+        {% endfor %}
+    {% else %}
+        <p class="muted">Чатов пока нет</p>
+    {% endif %}
+</div>
