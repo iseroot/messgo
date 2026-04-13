@@ -59,7 +59,42 @@ jobs:
               chmod 600 "$APP_DIR/.env" || true
             fi
 
-            python3 -m venv .venv
+            PYTHON_BIN=""
+            if command -v python3.12 >/dev/null 2>&1; then
+              PYTHON_BIN="python3.12"
+            elif command -v python3 >/dev/null 2>&1; then
+              PYTHON_BIN="python3"
+            fi
+
+            if [ -n "$PYTHON_BIN" ]; then
+              VER="$($PYTHON_BIN -c 'import sys; print(f\"{sys.version_info.major}.{sys.version_info.minor}\")')"
+              if [ "$VER" != "3.12" ]; then
+                echo "Нужен Python 3.12+. Обнаружен: $($PYTHON_BIN --version)"
+                if command -v apt-get >/dev/null 2>&1; then
+                  echo "Пробую установить python3.12 через apt..."
+                  $SUDO apt-get update -y
+                  $SUDO apt-get install -y software-properties-common || true
+                  if command -v lsb_release >/dev/null 2>&1; then
+                    CODENAME="$(lsb_release -cs || true)"
+                    if [ "$CODENAME" = "jammy" ]; then
+                      $SUDO add-apt-repository -y ppa:deadsnakes/ppa
+                      $SUDO apt-get update -y
+                    fi
+                  fi
+                  $SUDO apt-get install -y python3.12 python3.12-venv
+                  PYTHON_BIN="python3.12"
+                else
+                  exit 1
+                fi
+              fi
+            fi
+
+            if ! command -v python3.12 >/dev/null 2>&1; then
+              echo "На сервере нет python3.12. Установи Python 3.12 и python3.12-venv, затем повтори деплой."
+              exit 1
+            fi
+
+            python3.12 -m venv .venv
             . .venv/bin/activate
             python -m pip install --upgrade pip
             python -m pip install -e .
