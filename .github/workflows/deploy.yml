@@ -38,6 +38,13 @@ jobs:
             fi
 
             if [ ! -d "$APP_DIR/.git" ]; then
+              if [ -d "$APP_DIR" ] && [ -n "$(ls -A "$APP_DIR" 2>/dev/null || true)" ]; then
+                TS="$(date +%s)"
+                BACKUP_DIR="${APP_DIR}.bak.${TS}"
+                echo "Каталог $APP_DIR существует и не является git-репозиторием. Перемещаю в $BACKUP_DIR"
+                $SUDO mv "$APP_DIR" "$BACKUP_DIR"
+              fi
+
               $SUDO mkdir -p "$APP_DIR"
               $SUDO chown -R "$USER":"$USER" "$APP_DIR"
               git clone "$REPO_URL" "$APP_DIR"
