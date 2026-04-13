@@ -41,6 +41,7 @@ async def index(
 
     templates = request.app.state.templates
     return templates.TemplateResponse(
+        request,
         "login.html",
         {
             "request": request,
@@ -70,6 +71,7 @@ async def app_page(
 
     templates = request.app.state.templates
     return templates.TemplateResponse(
+        request,
         "app.html",
         {
             "request": request,
@@ -94,6 +96,7 @@ async def chats_partial(
     chats = ChatRepository(db).list_user_chats(user_id)
     templates = request.app.state.templates
     return templates.TemplateResponse(
+        request,
         "partials/chat_list.html",
         {
             "request": request,
@@ -122,6 +125,7 @@ async def messages_partial(
     messages = MessageRepository(db).list_messages(chat_id=chat_id, limit=100, offset=0)
     templates = request.app.state.templates
     return templates.TemplateResponse(
+        request,
         "partials/messages.html",
         {
             "request": request,
