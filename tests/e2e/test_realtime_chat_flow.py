@@ -6,7 +6,6 @@ from tests.conftest import auth_headers
 
 @pytest.mark.anyio
 async def test_full_user_to_user_flow(app_instance):
-    await app_instance.router.startup()
     owner_transport = ASGITransport(app=app_instance)
     bob_transport = ASGITransport(app=app_instance)
 
@@ -88,4 +87,3 @@ async def test_full_user_to_user_flow(app_instance):
         assert bob_messages.status_code == 200
         assert len(bob_messages.json()) == 1
         assert bob_messages.json()[0]["text"] == "Привет, Bob"
-    await app_instance.router.shutdown()

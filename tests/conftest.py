@@ -40,16 +40,33 @@ def app_instance(tmp_path, monkeypatch) -> FastAPI:
     deps_module.rate_limiter.reset()
     test_app = main_module.create_app()
 
+    # Явно выполняем минимум логики startup, чтобы не зависеть от реализации lifespan в httpx/starlette.
+    from app.application.services.auth_service import AuthService
+    from app.infrastructure.repositories import InviteRepository, SessionRepository, UserRepository
+
+    db = db_module.SessionLocal()
+    try:
+        settings = get_settings()
+        AuthService(
+            user_repo=UserRepository(db),
+            invite_repo=InviteRepository(db),
+            session_repo=SessionRepository(db),
+        ).ensure_bootstrap_invite(
+            code=settings.bootstrap_invite_code,
+            ttl_hours=settings.invite_default_ttl_hours,
+            max_uses=settings.invite_default_limit,
+        )
+    finally:
+        db.close()
+
     return test_app
 
 
 @pytest.fixture
 async def client(app_instance: FastAPI):
-    await app_instance.router.startup()
     transport = ASGITransport(app=app_instance)
     async with AsyncClient(transport=transport, base_url="http://testserver") as test_client:
         yield test_client
-    await app_instance.router.shutdown()
 
 
 @pytest.fixture
